@@ -1,7 +1,7 @@
 /* eslint-disable import/no-unresolved */
 import React from 'react'
 import { Box, SliderProps, styled } from '@mui/material'
-import { InputwithlabelInterface } from '@/interfaces/inputwithlabel-interface'
+import { InputwithlabelInterface } from '@/interfaces/inputwithlabel.interface'
 
 const Inputwithlabel = ({
   children,

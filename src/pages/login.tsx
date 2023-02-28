@@ -8,24 +8,46 @@ import {
   Typography,
   Divider,
 } from '@mui/material'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { styled } from '@mui/material/styles'
 import { useForm } from 'react-hook-form'
 import { Stack } from '@mui/system'
 import { useNavigate } from 'react-router-dom'
+import { v4 as uuid4 } from 'uuid'
+import { useMutation } from '@tanstack/react-query'
+import LoadingButton from '@mui/lab/LoadingButton'
 import Inputwithlabel from '@/components/layouts/inputwithlabel'
 import PasswordTextField from '@/components/common/passwordTextField'
-import { LoginInterface } from '@/interfaces/login-interface'
+import { LoginInterface } from '@/interfaces/login.interface'
+import { LoginApi } from '@/services/auth-api'
+import { accessTokenStore } from '@/helpers/local-storage'
 
 const Login = () => {
   const navigate = useNavigate()
   const { register, handleSubmit, watch } = useForm<LoginInterface>()
 
-  const handleSubmitForm = (data: LoginInterface) => {
-    console.log('data :>> ', data)
-    localStorage.setItem('access_token', 'ed3f1381-81a6-45cd-8b9f-ff76ee1137fd')
-    navigate('/')
+  const { mutateAsync, isLoading } = useMutation(LoginApi)
+
+  const handleSubmitForm = async (data: LoginInterface) => {
+    const {
+      items: { access_token },
+    } = await mutateAsync(data)
+    accessTokenStore.set(access_token)
+    window.location.href = '/'
   }
+
+  const handleConnectGoogle = () => {
+    window.location.href =
+      import.meta.env.VITE_APP_SERVICE_API +
+      '/auth/oauth/login?state=' +
+      uuid4()
+  }
+
+  useEffect(() => {
+    if (accessTokenStore.load()) {
+      navigate('/')
+    }
+  }, [accessTokenStore])
 
   return (
     <Box maxHeight='100vh'>
@@ -47,7 +69,7 @@ const Login = () => {
             <Form onSubmit={handleSubmit(handleSubmitForm)}>
               <ContentInput>
                 <Inputwithlabel label='Username'>
-                  <TextField {...register('username')} placeholder='username' />
+                  <TextField {...register('e_mail')} placeholder='username' />
                 </Inputwithlabel>
               </ContentInput>
               <ContentInput>
@@ -72,7 +94,8 @@ const Login = () => {
                 <LoginButton
                   type='submit'
                   variant='contained'
-                  disabled={!watch('username') || !watch('password')}
+                  disabled={!watch('e_mail') || !watch('password')}
+                  loading={isLoading}
                 >
                   Log in
                 </LoginButton>
@@ -84,7 +107,7 @@ const Login = () => {
                 Login with
               </Typography>
               <Box component='p' textAlign='center'>
-                <Button variant='outlined'>
+                <Button variant='outlined' onClick={handleConnectGoogle}>
                   <Box display='flex' columnGap={2}>
                     <img src='/images/google-logo.png' alt='icon-google' />
                     <span>Connect with google</span>
@@ -143,7 +166,7 @@ const Form = styled('form')(() => ({
   rowGap: '1.4rem',
 }))
 
-const LoginButton = styled(Button)<SliderProps>(() => ({
+const LoginButton = styled(LoadingButton)<SliderProps>(() => ({
   margin: '10px 0',
   color: '#fff',
   minWidth: 100,
